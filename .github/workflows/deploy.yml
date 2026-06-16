@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+
+          script: |
+            cd /root/bike-rental-system
+
+            git pull origin main
+
+            cd backend
+            npm install
+            pm2 restart bike-backend
+
+            cd ../frontend
+            npm install
+            npm run build
+
+            rm -rf /usr/share/nginx/html/bike/*
+            cp -r dist/* /usr/share/nginx/html/bike/
+
+            systemctl reload nginx
